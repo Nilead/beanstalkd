@@ -3,12 +3,12 @@ package beanstalkd
 
 import (
 	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
 	"net"
 	"strings"
 	"time"
-	"bytes"
 )
 
 // beanstalkd job
@@ -279,10 +279,10 @@ func (this *BeanstalkdClient) Put(priority uint32, delay, ttr time.Duration, dat
 	// Strip off newline chars
 	// i.e. json.Encoder always appends \n
 	if bytes.HasSuffix(data, []byte("\r")) {
-		data = data[ :len(data)-1]
+		data = data[:len(data)-1]
 	}
 	if bytes.HasSuffix(data, []byte("\n")) {
-		data = data[ :len(data)-1]
+		data = data[:len(data)-1]
 	}
 
 	cmd := fmt.Sprintf("put %d %d %d %d\r\n", priority, uint64(delay.Seconds()), uint64(ttr.Seconds()), len(data))
@@ -454,7 +454,12 @@ The client then waits for one line of response, which may be:
 */
 func (this *BeanstalkdClient) Delete(id uint64) error {
 	cmd := fmt.Sprintf("delete %d\r\n", id)
-	_, reply, _ := this.sendReply(cmd)
+	_, reply, err := this.sendReply(cmd)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return this.assert(reply, "DELETED\r\n")
 }
 
@@ -483,7 +488,12 @@ The client expects one line of response, which may be:
 */
 func (this *BeanstalkdClient) Release(id uint64, priority uint32, delay time.Duration) error {
 	cmd := fmt.Sprintf("release %d %d %d\r\n", id, priority, uint64(delay.Seconds()))
-	_, reply, _ := this.sendReply(cmd)
+	_, reply, err := this.sendReply(cmd)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return this.assert(reply, "RELEASED\r\n")
 }
 
@@ -508,7 +518,12 @@ There are two possible responses:
 */
 func (this *BeanstalkdClient) Bury(id uint64, priority uint32) error {
 	cmd := fmt.Sprintf("bury %d %d\r\n", id, priority)
-	_, reply, _ := this.sendReply(cmd)
+	_, reply, err := this.sendReply(cmd)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return this.assert(reply, "BURIED\r\n")
 }
 
@@ -534,7 +549,12 @@ There are two possible responses:
 */
 func (this *BeanstalkdClient) Touch(id uint64) error {
 	cmd := fmt.Sprintf("touch %d\r\n", id)
-	_, reply, _ := this.sendReply(cmd)
+	_, reply, err := this.sendReply(cmd)
+
+	if err != nil {
+		return nil, err
+	}
+
 	return this.assert(reply, "TOUCHED\r\n")
 }
 
