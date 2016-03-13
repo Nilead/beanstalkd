@@ -154,12 +154,21 @@ func (this *BeanstalkdClient) reply() (string, error) {
 }
 
 // send and get reply
-func (this *BeanstalkdClient) sendReply(cmd string) (int, string, error) {
-	n, err := this.send(cmd)
+func (this *BeanstalkdClient) sendReply(cmd string) (n int, reply string, err error) {
+
+	defer func() {
+		merr := recover()
+
+		if merr != nil {
+			err = merr.(error)
+		}
+	}()
+
+	n, err = this.send(cmd)
 	if err != nil {
 		return -1, "", err
 	}
-	reply, err := this.reply()
+	reply, err = this.reply()
 	if err != nil {
 		return n, "", err
 	}
@@ -457,7 +466,7 @@ func (this *BeanstalkdClient) Delete(id uint64) error {
 	_, reply, err := this.sendReply(cmd)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	return this.assert(reply, "DELETED\r\n")
@@ -491,7 +500,7 @@ func (this *BeanstalkdClient) Release(id uint64, priority uint32, delay time.Dur
 	_, reply, err := this.sendReply(cmd)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	return this.assert(reply, "RELEASED\r\n")
@@ -521,7 +530,7 @@ func (this *BeanstalkdClient) Bury(id uint64, priority uint32) error {
 	_, reply, err := this.sendReply(cmd)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	return this.assert(reply, "BURIED\r\n")
@@ -552,7 +561,7 @@ func (this *BeanstalkdClient) Touch(id uint64) error {
 	_, reply, err := this.sendReply(cmd)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	return this.assert(reply, "TOUCHED\r\n")
