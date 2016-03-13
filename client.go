@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"net"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -112,6 +113,7 @@ type BeanstalkdClient struct {
 	addr   string
 	reader *bufio.Reader
 	writer *bufio.Writer
+	mutex  *sync.Mutex
 }
 
 // dial connect to beanstalkd server
@@ -126,6 +128,7 @@ func Dial(addr string) (*BeanstalkdClient, error) {
 		addr:   addr,
 		reader: bufio.NewReader(c),
 		writer: bufio.NewWriter(c),
+		mutex: sync.Mutex{}
 	}, nil
 }
 
@@ -133,11 +136,15 @@ func Dial(addr string) (*BeanstalkdClient, error) {
 func (this *BeanstalkdClient) send(cmd string) (int, error) {
 	//fmt.Println(cmd)
 	data := []byte(cmd)
+	this.mutex.Lock()
 	n, err := this.writer.Write(data)
+	this.mutex.Unlock()
 	if err != nil {
 		return -1, err
 	}
+	this.mutex.Lock()
 	err = this.writer.Flush()
+	this.mutex.Unlock()
 	if err != nil {
 		return -1, err
 	}
@@ -176,14 +183,20 @@ func (this *BeanstalkdClient) sendReply(cmd string) (n int, reply string, err er
 }
 
 func (this *BeanstalkdClient) recvLine() (string, error) {
-	return this.reader.ReadString('\n')
+	this.mutex.Lock()
+	reply, err := this.reader.ReadString('\n')
+	this.mutex.Unlock()
+
+	return reply, err
 }
 
 func (this *BeanstalkdClient) recvSlice(dataLen int) ([]byte, error) {
 	buf := make([]byte, dataLen+2) // Add 2 for \r\n
 	pos := 0
 	for {
+		this.mutex.Lock()
 		n, e := this.reader.Read(buf[pos:])
+		this.mutex.Unlock()
 		if e != nil {
 			return nil, e
 		}
@@ -197,7 +210,11 @@ func (this *BeanstalkdClient) recvSlice(dataLen int) ([]byte, error) {
 }
 
 func (this *BeanstalkdClient) recvData(data []byte) (int, error) {
-	return this.reader.Read(data)
+	this.mutex.Lock()
+	reply, err := this.reader.Read(data)
+	this.mutex.Unlock()
+
+	return reply, err
 }
 
 // parse error
