@@ -128,7 +128,7 @@ func Dial(addr string) (*BeanstalkdClient, error) {
 		addr:   addr,
 		reader: bufio.NewReader(c),
 		writer: bufio.NewWriter(c),
-		mutex: sync.Mutex{}
+		mutex:  &sync.Mutex{},
 	}, nil
 }
 
