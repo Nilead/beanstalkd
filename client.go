@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/Nilead/utility"
 	"net"
 	"strings"
 	"sync"
@@ -111,8 +112,8 @@ Here is a picture with more possibilities:
 type BeanstalkdClient struct {
 	conn   net.Conn
 	addr   string
-	reader *bufio.Reader
-	writer *bufio.Writer
+	reader *utility.TimeoutReader
+	writer *utility.TimeoutWriter
 	mutex  *sync.Mutex
 }
 
@@ -126,8 +127,8 @@ func Dial(addr string) (*BeanstalkdClient, error) {
 	return &BeanstalkdClient{
 		conn:   c,
 		addr:   addr,
-		reader: bufio.NewReader(c),
-		writer: bufio.NewWriter(c),
+		reader: utility.NewTimeoutReader(c, 16*1024, 30*time.Second),
+		writer: utility.NewTimeoutWritter(c, 16*1024, 30*time.Second),
 		mutex:  &sync.Mutex{},
 	}, nil
 }
