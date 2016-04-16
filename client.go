@@ -2,7 +2,6 @@
 package beanstalkd
 
 import (
-	"bufio"
 	"bytes"
 	"errors"
 	"fmt"
@@ -128,7 +127,7 @@ func Dial(addr string) (*BeanstalkdClient, error) {
 		conn:   c,
 		addr:   addr,
 		reader: utility.NewTimeoutReader(c, 16*1024, 30*time.Second),
-		writer: utility.NewTimeoutWritter(c, 16*1024, 30*time.Second),
+		writer: utility.NewTimeoutWriter(c, 16*1024, 30*time.Second),
 		mutex:  &sync.Mutex{},
 	}, nil
 }
